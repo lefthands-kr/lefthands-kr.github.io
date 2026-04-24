@@ -675,6 +675,12 @@
     var minSize = 24;
     var size = maxSize;
 
+    // 뷰포트 너비로 직접 사용 가능 너비 계산 (패딩 양쪽 합산)
+    // clientWidth는 스크롤바를 제외한 실제 레이아웃 너비, 1px 여유 추가
+    var vw = document.documentElement.clientWidth;
+    var sidePad = vw <= 600 ? 48 : vw <= 900 ? 56 : vw <= 1280 ? 80 : 120;
+    var availableWidth = vw - sidePad - 1;
+
     var span = document.createElement("span");
     span.style.cssText = "position:fixed;top:-9999px;left:-9999px;white-space:nowrap;" +
       "font-family:'Noto Sans KR',-apple-system,sans-serif;font-weight:300;letter-spacing:-0.03em;";
@@ -682,7 +688,6 @@
 
     el.style.fontSize = size + "px";
     span.style.fontSize = size + "px";
-    var availableWidth = el.offsetWidth;
 
     while (size > minSize) {
       var maxLineWidth = Math.max.apply(null, lines.map(function (line) {
@@ -697,8 +702,13 @@
 
     document.body.removeChild(span);
   }
+
+  var resizeTimer;
   window.addEventListener("load", fitProfileHeading);
-  window.addEventListener("resize", fitProfileHeading);
+  window.addEventListener("resize", function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(fitProfileHeading, 50);
+  });
   if (document.fonts) document.fonts.ready.then(fitProfileHeading);
 
   // Auto-fit caption font size
