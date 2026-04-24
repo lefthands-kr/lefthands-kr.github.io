@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>레프트핸즈 자동차 전문가 소개소</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    :root {
+      --black: #111111;
+      --gray: #888888;
+      --light-gray: #f4f4f4;
+      --border: #e8e8e8;
+      --white: #ffffff;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--white);
+      color: var(--black);
+      overflow-x: hidden;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 22px 60px;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-decoration: none;
+      color: #6B4226;
+      text-transform: uppercase;
+    }
+
+    .header-logo img {
+      height: 36px;
+      width: auto;
+      display: block;
+    }
+
+    nav { display: flex; gap: 36px; }
+
+    nav a {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--black);
+      text-decoration: none;
+      letter-spacing: 0.03em;
+      opacity: 0.5;
+      transition: opacity 0.2s;
+    }
+
+    nav a:hover { opacity: 1; }
+
+    /* ── PROFILE ── */
+    #profile {
+      padding: 220px 60px 160px;
+      min-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .profile-heading {
+      font-size: clamp(58px, 7.8vw, 120px);
+      font-weight: 300;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: var(--black);
+      margin-bottom: 44px;
+      white-space: pre-line;
+    }
+
+    .profile-url {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--gray);
+      letter-spacing: 0.1em;
+    }
+
+    /* ── PORTFOLIO ── */
+    #portfolio {
+      width: 100%;
+      position: relative;
+      background: #181818;
+      overflow: hidden;
+    }
+
+    .portfolio-stage {
+      width: 100%;
+      padding-bottom: 56.25%; /* 16:9 ratio */
+      position: relative;
+    }
+
+    .portfolio-slide {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      background-color: #1a1a1a;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+    }
+
+    .portfolio-slide.active { opacity: 1; }
+
+    .portfolio-dots {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    .portfolio-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.25);
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+    }
+
+    .portfolio-dot.active {
+      background: rgba(255, 255, 255, 0.85);
+      transform: scale(1.4);
+    }
+
+    .portfolio-caption {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      color: #ffffff;
+      background: rgba(0, 0, 0, 0.5);
+      font-size: 18px;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      padding: 12px 28px;
+      pointer-events: none;
+    }
+
+    .portfolio-counter {
+      position: absolute;
+      bottom: 22px;
+      right: 40px;
+      color: rgba(255, 255, 255, 0.3);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      z-index: 10;
+      font-weight: 300;
+    }
+
+    /* ── SERVICES ── */
+    #services {
+      padding: 120px 60px 140px;
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.22em;
+      color: var(--gray);
+      text-transform: uppercase;
+      margin-bottom: 64px;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      column-gap: 40px;
+      row-gap: 56px;
+    }
+
+    .service-item {
+      border-top: 1px solid var(--black);
+      padding-top: 28px;
+    }
+
+    .service-number {
+      font-size: 10px;
+      color: var(--gray);
+      margin-bottom: 20px;
+      letter-spacing: 0.1em;
+      font-weight: 300;
+    }
+
+    .service-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #6B4226;
+      line-height: 1.55;
+      margin-bottom: 18px;
+      letter-spacing: -0.01em;
+    }
+
+    .service-description {
+      font-size: 12.5px;
+      font-weight: 300;
+      color: var(--gray);
+      line-height: 1.95;
+    }
+
+    /* ── PARTNERS ── */
+    #partners {
+      padding: 0 60px 140px;
+    }
+
+    #map {
+      width: 100%;
+      height: 520px;
+      background: var(--light-gray);
+    }
+
+    .leaflet-popup-content-wrapper {
+      border-radius: 0 !important;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+
+    .leaflet-popup-tip-container { display: none; }
+
+    .leaflet-popup-content {
+      margin: 14px 18px !important;
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.7;
+    }
+
+    .leaflet-popup-content strong {
+      font-weight: 500;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .popup-link {
+      display: inline-block;
+      margin-top: 10px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      color: #111111;
+      text-decoration: none;
+      border-bottom: 1px solid #111111;
+      padding-bottom: 1px;
+      transition: opacity 0.2s;
+    }
+
+    .popup-link:hover { opacity: 0.4; }
+
+    /* ── CONTACT ── */
+    #contact {
+      padding: 120px 60px 100px;
+      background: #333333;
+      color: var(--white);
+    }
+
+    .contact-label {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.22em;
+      color: rgba(255, 255, 255, 0.28);
+      text-transform: uppercase;
+      margin-bottom: 64px;
+    }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 60px;
+    }
+
+    .contact-item-type {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.28);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      font-weight: 400;
+    }
+
+    .contact-item-value {
+      font-size: 14px;
+      font-weight: 300;
+      line-height: 1.75;
+      letter-spacing: 0.01em;
+    }
+
+    .contact-item-value a {
+      color: var(--white);
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+
+    .contact-item-value a:hover { opacity: 0.45; }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 28px 60px;
+      background: #6B4226;
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .footer-text {
+      font-size: 11px;
+      color: #ffffff;
+      letter-spacing: 0.12em;
+      font-weight: 300;
+    }
+
+    /* ── SCROLL REVEAL ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 0.75s ease, transform 0.75s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-delay-1 { transition-delay: 0.12s; }
+    .reveal-delay-2 { transition-delay: 0.24s; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1280px) {
+      header { padding: 20px 40px; }
+      #profile { padding: 200px 40px 130px; }
+      #services, #contact { padding-left: 40px; padding-right: 40px; }
+      #partners { padding-left: 40px; padding-right: 40px; }
+      footer { padding: 24px 40px; }
+      .services-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (max-width: 900px) {
+      header { padding: 16px 28px; }
+      nav { gap: 22px; }
+      #profile { padding: 160px 28px 110px; }
+      #services, #contact { padding-left: 28px; padding-right: 28px; }
+      #partners { padding-left: 28px; padding-right: 28px; }
+      footer { padding: 20px 28px; }
+      .services-grid { grid-template-columns: repeat(2, 1fr); }
+      .contact-grid { grid-template-columns: repeat(2, 1fr); gap: 44px; }
+    }
+
+    @media (max-width: 600px) {
+      nav { display: none; }
+      #profile { padding: 140px 24px 90px; }
+      #services, #contact { padding-left: 24px; padding-right: 24px; }
+      #partners { padding-left: 24px; padding-right: 24px; }
+      footer { padding: 18px 24px; }
+      .services-grid { grid-template-columns: 1fr; }
+      .contact-grid { grid-template-columns: 1fr; gap: 36px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <a href="#profile" class="header-logo">
+      <img src="images/logo.png" alt="레프트핸즈 로고">
+      레프트핸즈 자동차 전문가 소개소
+    </a>
+    <nav>
+      <a href="#profile">소개</a>
+      <a href="#portfolio">포트폴리오</a>
+      <a href="#services">서비스</a>
+      <a href="#partners">파트너</a>
+      <a href="#contact">연락처</a>
+    </nav>
+  </header>
+
+  <!-- PROFILE -->
+  <section id="profile">
+    <h1 class="profile-heading reveal" id="profileHeading"></h1>
+    <span class="profile-url reveal reveal-delay-1" id="profileUrl"></span>
+  </section>
+
+  <!-- PORTFOLIO -->
+  <!-- 사진 파일은 ./images/ 폴더에 portfolio-01.jpg ~ portfolio-12.jpg 형식으로 저장 -->
+  <!-- 권장 사이즈: 1920 × 1440px (4:3 비율) -->
+  <section id="portfolio">
+    <div class="portfolio-stage" id="portfolioStage"></div>
+    <div class="portfolio-dots" id="portfolioDots"></div>
+    <div class="portfolio-counter" id="portfolioCounter"></div>
+  </section>
+
+  <!-- SERVICES -->
+  <section id="services">
+    <p class="section-label reveal">Services</p>
+    <div class="services-grid" id="servicesGrid"></div>
+  </section>
+
+  <!-- PARTNERS -->
+  <section id="partners">
+    <p class="section-label reveal">Partners</p>
+    <div id="map" class="reveal reveal-delay-1"></div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <p class="contact-label reveal">Contact</p>
+    <div class="contact-grid reveal reveal-delay-1" id="contactGrid"></div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p class="footer-text">레프트핸즈 자동차 전문가 소개소</p>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+  /* ============================================================
+     설정 — 이 부분을 수정해서 사이트 내용을 변경하세요
+     ============================================================ */
+
+  const PROFILE = {
+    heading: "진심으로 일하는\n자동차 전문가를\n소개합니다",
+    url: "lefthands.kr"
+  };
+
+  // 포트폴리오 사진 12장 경로
+  // ./images/ 폴더에 파일을 넣고 경로를 맞춰주세요
+  const PORTFOLIO_IMAGES = [
+    { src: "images/portfolio-01.jpg", caption: "인천 초고품질 자동차 사고 수리 '비알오토솔루션'" },
+    { src: "images/portfolio-02.jpg", caption: "시흥 정확한 휠 얼라인먼트 '티스테이션 목감점'" },
+    { src: "images/portfolio-03.jpg", caption: "경기 남부 출장 자동차 흠집 제거 및 차체 수리 '카케어포유'" },
+    { src: "images/portfolio-04.jpg", caption: "구미 자동차 디테일링 세차 'GP카케어'" },
+    { src: "images/portfolio-05.jpg", caption: "안양 말이 필요 없는 자동차 정비소 '상익카'" },
+    { src: "images/portfolio-06.jpg", caption: "수원 BMW 전문 정비소 '피트크루'" },
+    { src: "images/portfolio-07.jpg", caption: "일산 자동변속기(오토매틱트랜스미션) 전문 '한국오토'" },
+    { src: "images/portfolio-08.jpg", caption: "청주 디젤 엔진 정비 전문 '건민카센터'" },
+    { src: "images/portfolio-09.jpg", caption: "왜관 디젤 엔진 정비 전문 'OK카서비스'" },
+    { src: "images/portfolio-10.jpg", caption: "전국 자동변속기(오토매틱트랜스미션) 재제조 '대성오토'" },
+    { src: "images/portfolio-11.jpg", caption: "안산 재규어/랜드로버 정비 전문 'J4모터스'" },
+    { src: "images/portfolio-12.jpg", caption: "천안 디젤 엔진 정비 전문 '천안디젤팩토리'" },
+  ];
+
+  // 서비스 항목 — 자유롭게 추가/수정/삭제 가능
+  const SERVICES = [
+    {
+      title: "분야별 전문가 소개",
+      description: "자동차 정비 각 분야별 전문가를 소개합니다"
+    },
+    {
+      title: "자동차 건강 검진",
+      description: "현재 자동차의 상태를 정확하게 진단 후 전문가를 연결합니다"
+    },
+    {
+      title: "자동차 정비소 브랜딩",
+      description: "좋은 소비자를 만날 수 있도록 브랜딩을 도와드립니다"
+    },
+    {
+      title: "자동차 관리 정보 콘텐츠",
+      description: "자동차 관리에 도움이 되는 양질의 콘텐츠를 제작합니다"
+    },
+    {
+      title: "자동차 관리 대행",
+      description: "바쁘고 여유없는 분들에게 최선의 방향을 제시합니다"
+    }
+  ];
+
+  // 파트너 위치 — 이름·위도(lat)·경도(lng)·링크(url)를 실제 정보로 수정하세요
+  // url을 비워두면 바로가기 버튼이 표시되지 않습니다
+  const PARTNERS = [
+    { name: "파트너사 A", lat: 37.5665, lng: 126.9780, url: "" },
+    { name: "파트너사 B", lat: 37.5179, lng: 127.0473, url: "" },
+    { name: "파트너사 C", lat: 37.4979, lng: 126.9773, url: "" },
+    { name: "파트너사 D", lat: 37.5511, lng: 126.9882, url: "" },
+    { name: "파트너사 E", lat: 37.5634, lng: 127.0369, url: "" },
+  ];
+
+  // 연락처 — 실제 정보로 교체하세요
+  const CONTACT = {
+    email: "editor@lefthands.kr",
+    phone: "010 4683 8700",
+    instagramHandle: "@lefthands.kr",
+    instagramUrl: "https://instagram.com/lefthands.kr",
+    naverBlogName: "네이버 블로그",
+    naverBlogUrl: "https://blog.naver.com/lefthand_pro"
+  };
+
+  /* ============================================================
+     초기화 — 아래는 수정 불필요
+     ============================================================ */
+
+  // Profile
+  document.getElementById("profileHeading").textContent = PROFILE.heading;
+  document.getElementById("profileUrl").textContent = PROFILE.url;
+
+  // Portfolio slideshow
+  (function () {
+    const stage = document.getElementById("portfolioStage");
+    const dotsEl = document.getElementById("portfolioDots");
+    const counterEl = document.getElementById("portfolioCounter");
+    let current = 0;
+    let timer;
+
+    const slides = PORTFOLIO_IMAGES.map((item, i) => {
+      const div = document.createElement("div");
+      div.className = "portfolio-slide" + (i === 0 ? " active" : "");
+      div.style.backgroundImage = "url(" + item.src + ")";
+      if (item.caption) {
+        const cap = document.createElement("div");
+        cap.className = "portfolio-caption";
+        cap.textContent = item.caption;
+        div.appendChild(cap);
+      }
+      stage.appendChild(div);
+      return div;
+    });
+
+    const dots = PORTFOLIO_IMAGES.map((_, i) => {
+      const dot = document.createElement("div");
+      dot.className = "portfolio-dot" + (i === 0 ? " active" : "");
+      dot.addEventListener("click", function () { goTo(i); restart(); });
+      dotsEl.appendChild(dot);
+      return dot;
+    });
+
+    function goTo(n) {
+      slides[current].classList.remove("active");
+      dots[current].classList.remove("active");
+      current = (n + slides.length) % slides.length;
+      slides[current].classList.add("active");
+      dots[current].classList.add("active");
+      counterEl.textContent =
+        pad(current + 1) + " / " + pad(slides.length);
+    }
+
+    function pad(n) { return String(n).padStart(2, "0"); }
+
+    function restart() {
+      clearInterval(timer);
+      timer = setInterval(function () { goTo(current + 1); }, 2000);
+    }
+
+    counterEl.textContent = "01 / " + pad(slides.length);
+    restart();
+  })();
+
+  // Services
+  (function () {
+    const grid = document.getElementById("servicesGrid");
+    SERVICES.forEach(function (s, i) {
+      const item = document.createElement("div");
+      item.className = "service-item reveal";
+      item.style.transitionDelay = (i * 0.08) + "s";
+      item.innerHTML =
+        '<div class="service-number">' + String(i + 1).padStart(2, "0") + '</div>' +
+        '<div class="service-title">' + s.title + '</div>' +
+        '<div class="service-description">' + s.description + '</div>';
+      grid.appendChild(item);
+    });
+  })();
+
+  // Partners map (Leaflet + OpenStreetMap)
+  (function () {
+    var avgLat = PARTNERS.reduce(function (s, p) { return s + p.lat; }, 0) / PARTNERS.length;
+    var avgLng = PARTNERS.reduce(function (s, p) { return s + p.lng; }, 0) / PARTNERS.length;
+
+    var map = L.map("map", {
+      zoomControl: true,
+      scrollWheelZoom: false,
+      attributionControl: true
+    }).setView([36.5, 127.8], 7);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 18
+    }).addTo(map);
+
+    var markerIcon = L.divIcon({
+      html: '<div style="width:12px;height:12px;border-radius:50%;background:#111111;border:2px solid #ffffff;box-shadow:0 2px 8px rgba(0,0,0,0.35);"></div>',
+      className: "",
+      iconSize: [12, 12],
+      iconAnchor: [6, 6],
+      popupAnchor: [0, -14]
+    });
+
+    PARTNERS.forEach(function (p) {
+      var popupHtml =
+        "<strong>" + p.name + "</strong>" +
+        (p.url
+          ? '<br><a class="popup-link" href="' + p.url + '" target="_blank" rel="noopener noreferrer">바로가기 →</a>'
+          : "");
+      L.marker([p.lat, p.lng], { icon: markerIcon })
+        .addTo(map)
+        .bindPopup(popupHtml, { minWidth: 140 });
+    });
+  })();
+
+  // Contact
+  (function () {
+    const grid = document.getElementById("contactGrid");
+    const items = [
+      {
+        type: "Email",
+        html: '<a href="mailto:' + CONTACT.email + '">' + CONTACT.email + '</a>'
+      },
+      {
+        type: "Phone",
+        html: '<a href="tel:' + CONTACT.phone.replace(/-/g, "") + '">' + CONTACT.phone + '</a>'
+      },
+      {
+        type: "Instagram",
+        html: '<a href="' + CONTACT.instagramUrl + '" target="_blank" rel="noopener noreferrer">' + CONTACT.instagramHandle + '</a>'
+      },
+      {
+        type: "Naver Blog",
+        html: '<a href="' + CONTACT.naverBlogUrl + '" target="_blank" rel="noopener noreferrer">' + CONTACT.naverBlogName + '</a>'
+      }
+    ];
+
+    items.forEach(function (item) {
+      const div = document.createElement("div");
+      div.className = "contact-item";
+      div.innerHTML =
+        '<div class="contact-item-type">' + item.type + '</div>' +
+        '<div class="contact-item-value">' + item.html + '</div>';
+      grid.appendChild(div);
+    });
+  })();
+
+  // Cursor-following logo
+  (function () {
+    var cursor = document.createElement("img");
+    cursor.src = "images/logo.png";
+    cursor.style.cssText = [
+      "position:fixed",
+      "top:0", "left:0",
+      "width:56px", "height:auto",
+      "pointer-events:none",
+      "z-index:9999",
+      "transform:translate(12px,12px)",
+      "opacity:0",
+      "transition:opacity 0.3s"
+    ].join(";");
+    document.body.appendChild(cursor);
+
+    var mx = 0, my = 0, cx = 0, cy = 0;
+    var visible = false;
+
+    document.addEventListener("mousemove", function (e) {
+      mx = e.clientX;
+      my = e.clientY;
+      if (!visible) {
+        visible = true;
+        cursor.style.opacity = "1";
+      }
+    });
+
+    document.addEventListener("mouseleave", function () {
+      visible = false;
+      cursor.style.opacity = "0";
+    });
+
+    (function animate() {
+      cx += (mx - cx) * 0.1;
+      cy += (my - cy) * 0.1;
+      cursor.style.left = cx + "px";
+      cursor.style.top  = cy + "px";
+      requestAnimationFrame(animate);
+    })();
+  })();
+
+  // Scroll reveal
+  (function () {
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          e.target.classList.add("visible");
+          observer.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll(".reveal").forEach(function (el) {
+      observer.observe(el);
+    });
+  })();
+  </script>
+</body>
+</html>
